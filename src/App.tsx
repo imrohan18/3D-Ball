@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ChevronLeft, ChevronRight, Play, ShoppingBag, User } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
 import { createGirdledSphereGeometry } from './utils/geometry';
-import { createStitchTexture, createStitchAlphaMap, createLeatherNormalMap, createBrandingTexture, createLeatherColorMap, createRoughnessMap, createMetalnessMap, createAOMap } from './utils/textures';
-import { ShoppingBag, User, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { createAOMap, createBrandingTexture, createLeatherColorMap, createLeatherNormalMap, createMetalnessMap, createRoughnessMap, createStitchAlphaMap, createStitchTexture } from './utils/textures';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -75,6 +75,9 @@ export default function App() {
     const metalnessMap = createMetalnessMap();
     const aoMap = createAOMap();
 
+    // Stitching offset for animation
+    const stitchOffset = { value: 0 };
+
     // Ball Group for easier rotation management
     const ballGroup = new THREE.Group();
     scene.add(ballGroup);
@@ -114,6 +117,8 @@ export default function App() {
     });
     const seamMesh = new THREE.Mesh(geometry, seamMaterial);
     seamMesh.scale.set(1.008, 1.008, 1.008);
+    // Rotate seamMesh so it runs vertically (up to down)
+    seamMesh.rotation.z = Math.PI / 2;
     ball.add(seamMesh);
 
     // Branding Decal (Gold Foil) - Rotated to face
@@ -140,6 +145,18 @@ export default function App() {
       x: 0, y: 0, z: 0,
       duration: 1.2,
       ease: "power3.out"
+    });
+
+    // Animate stitching offset - clockwise from up to down
+    gsap.to(stitchOffset, {
+      value: 1,
+      duration: 10,
+      repeat: -1,
+      ease: "none",
+      onUpdate: () => {
+        if (stitchNormalMap) stitchNormalMap.offset.x = stitchOffset.value;
+        if (stitchAlphaMap) stitchAlphaMap.offset.x = stitchOffset.value;
+      }
     });
 
     const handleMouseMove = (e: MouseEvent) => {
