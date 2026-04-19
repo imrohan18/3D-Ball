@@ -17,6 +17,11 @@ export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [activeColor, setActiveColor] = useState<'red' | 'white' | 'pink'>('red');
+  const [cartCount, setCartCount] = useState(0);
+  const [isAdding, setIsAdding] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  
+  const addToCartBtnRef = useRef<HTMLButtonElement>(null);
   
   // Refs for Three.js objects
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -255,8 +260,48 @@ export default function App() {
     changeBallColor(colors[nextIndex]);
   };
 
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleAddToCart = () => {
+    if (isAdding) return;
+    setIsAdding(true);
+
+    if (addToCartBtnRef.current) {
+      const btn = addToCartBtnRef.current;
+      const tl = gsap.timeline();
+      
+      tl.to(btn, { scale: 0.95, duration: 0.1 })
+        .to(btn, { 
+          backgroundColor: "#4ade80",
+          scale: 1.05,
+          duration: 0.3, 
+          ease: "back.out(1.7)"
+        })
+        .to(btn, { scale: 1, duration: 0.2 })
+        .to(btn, { 
+          backgroundColor: "#00bfff", 
+          duration: 0.3, 
+          delay: 1 
+        });
+    }
+
+    setTimeout(() => {
+      setCartCount(prev => prev + 1);
+      setIsAdding(false);
+      showToast("Item added to cart");
+    }, 1000);
+  };
+
   return (
     <div ref={containerRef} className="relative w-full h-screen bg-[#050505] text-white font-sans overflow-hidden select-none">
+      {/* Toast Notification */}
+      <div className={`absolute top-24 left-1/2 -translate-x-1/2 z-50 bg-white text-black px-6 py-3 rounded-full font-bold tracking-widest text-xs uppercase shadow-2xl transition-all duration-300 ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+        {toastMessage}
+      </div>
+
       {/* Background Typography */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
         <h2 className="text-[25vw] font-black text-[#1a1a1a] tracking-tighter leading-none select-none">
@@ -274,14 +319,21 @@ export default function App() {
         </div>
         
         <div className="hidden md:flex items-center gap-12 text-sm font-medium text-neutral-400">
-          <a href="#" className="hover:text-white transition-colors">Products</a>
-          <a href="#" className="hover:text-white transition-colors">Customize</a>
-          <a href="#" className="hover:text-white transition-colors">Contacts</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); showToast("Products section coming soon"); }} className="hover:text-white transition-colors">Products</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); showToast("Customizer loading..."); }} className="hover:text-white transition-colors">Customize</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); showToast("Contact support"); }} className="hover:text-white transition-colors">Contacts</a>
         </div>
 
         <div className="flex items-center gap-6">
-          <User size={20} className="text-neutral-400 hover:text-white cursor-pointer" />
-          <ShoppingBag size={20} className="text-neutral-400 hover:text-white cursor-pointer" />
+          <User onClick={() => showToast("User Profile")} size={20} className="text-neutral-400 hover:text-white cursor-pointer" />
+          <div className="relative">
+            <ShoppingBag onClick={() => showToast("Opening Cart")} size={20} className="text-neutral-400 hover:text-white cursor-pointer" />
+            {cartCount > 0 && (
+              <div className="absolute -top-2 -right-2 w-4 h-4 bg-[#00bfff] text-black text-[10px] font-bold flex items-center justify-center rounded-full">
+                {cartCount}
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -291,7 +343,7 @@ export default function App() {
       </div>
 
       {/* Promotion Video Button */}
-      <div className="absolute top-1/3 left-12 z-20 flex items-center gap-4 group cursor-pointer">
+      <div onClick={() => showToast("Playing Promotion Video...")} className="absolute top-1/3 left-12 z-20 flex items-center gap-4 group cursor-pointer">
         <div className="w-12 h-12 rounded-full border border-neutral-700 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all">
           <Play size={16} fill="currentColor" />
         </div>
@@ -325,8 +377,12 @@ export default function App() {
           </div>
         </div>
 
-        <button className="px-12 py-4 bg-[#00bfff] text-black font-black text-sm tracking-widest uppercase hover:bg-[#0099cc] transition-all transform hover:scale-105 active:scale-95">
-          Add to Cart
+        <button 
+          ref={addToCartBtnRef}
+          onClick={handleAddToCart}
+          className="px-12 py-4 bg-[#00bfff] text-black font-black text-sm tracking-widest uppercase transition-all transform hover:scale-105 active:scale-95"
+        >
+          {isAdding ? "Added" : "Add to Cart"}
         </button>
 
         <div className="flex items-center gap-4">
